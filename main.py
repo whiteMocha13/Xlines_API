@@ -1,6 +1,8 @@
-from fastapi import FastAPI, HTTPException
+import sqlite3
+from fastapi import FastAPI, HTTPException, Depends 
 from pydantic import BaseModel
 from update_classes import XLineColorUpdate
+from database import get_db, init_db
 
 class Item(BaseModel):
     name: str
@@ -46,11 +48,14 @@ xlines: list[XLine] = [
         shipping_weight=40.5,
     ),
 ]
+
+init_db()
 app = FastAPI()
 
 @app.get("/xline/")
-async def get_all_xline():
-    return xlines 
+async def get_all_xline(db: sqlite3.Connection = Depends(get_db)):
+    rows = db.execute("SELECT * FROM xlines").fetchall()
+    return [dict(row) for row in rows] 
 
 
 @app.get("/xline/{xline_code}")
